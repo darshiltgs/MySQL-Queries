@@ -27,13 +27,13 @@ SELECT FIRST_NAME, LAST_NAME, DEPARTMENT_ID, SALARY FROM Tbl_Employees WHERE SAL
 SELECT FIRST_NAME, LAST_NAME, DEPARTMENT_ID FROM Tbl_Employees WHERE LAST_NAME = "McEwen";
 
 4.	Write a SQL query to find those employees who have no department number. Return employee_id, first_name, last_name, email,phone_number,hire_date, job_id, salary,commission_pct,manager_id and department_id.
-SELECT * FROM Tbl_Employees WHERE DEPARTMENT_ID IS NULL;
+SELECT * FROM Tbl_Employees WHERE DEPARTMENT_ID NOT IN (SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS);
 
 5.	Write a SQL query to find the details of 'Marketing' department. Return all fields.
 SELECT * FROM Tbl_Departments where DEPARTMENT_NAME = "Marketing";
 
 6.	Write a SQL query to find those employees whose first name does not contain the letter ‘M’. Sort the result-set in ascending order by department ID. Return full name (first and last name together), hire_date, salary and department_id.
-SELECT concat(FIRST_NAME, " ", LAST_NAME) AS FULL_NAME, HIRE_DATE, SALARY, DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE FIRST_NAME LIKE 'M%' ORDER BY DEPARTMENT_ID ASC;
+SELECT concat(FIRST_NAME, " ", LAST_NAME) AS FULL_NAME, HIRE_DATE, SALARY, DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE FIRST_NAME NOT LIKE '%M%' ORDER BY DEPARTMENT_ID ASC;
 
 7.	Write a SQL query to find those employees who falls one of the following criteria : 1. whose salary is in the range of 8000, 12000 (Begin and end values are included.) and get some commission. 2. : those employees who joined before ‘2003-06-05’ and not included in the department number 40, 120 and 70. Return all fields. Go to the editor
 SELECT * FROM TBL_EMPLOYEES WHERE (SALARY BETWEEN 8000 AND 12000 AND COMMISSION_PCT > 0.00) OR (HIRE_DATE < '2003-06-05' AND DEPARTMENT_ID NOT IN (40, 120, 70));
@@ -57,7 +57,7 @@ SELECT getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, JOB_ID, HIRE_DATE FROM T
 SELECT getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID IN (70, 90);
 
 14.	Write a SQL query to find those employees who work under a manager. Return full name (first and last name), salary, and manager ID.
-SELECT getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, SALARY, MANAGER_ID FROM TBL_EMPLOYEES WHERE MANAGER_ID != 0 OR MANAGER_ID = EMPLOYEE_ID;
+SELECT EMPLOYEE_ID, getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, SALARY, MANAGER_ID FROM TBL_EMPLOYEES WHERE MANAGER_ID != 0 AND MANAGER_ID != EMPLOYEE_ID;
 
 15.	Write a SQL query to find those employees who were hired before June 21st, 2002. Return all fields.
 SELECT * FROM TBL_EMPLOYEES WHERE HIRE_DATE < '2002-06-21';
@@ -73,7 +73,7 @@ SELECT
 getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, 
 HIRE_DATE, COMMISSION_PCT, EMAIL, 
 REPLACE(PHONE_NUMBER, "-", "") AS PHONE, SALARY 
-FROM TBL_EMPLOYEES WHERE SALARY > 11000 OR SUBSTRING(PHONE_NUMBER, 7, 1) = '3';
+FROM TBL_EMPLOYEES WHERE SALARY > 11000 OR SUBSTRING(PHONE_NUMBER, 7, 1) = '3' ORDER BY FIRST_NAME DESC;
 
 19.	Write a SQL query to find those employees whose first name contains a character ‘s’ in 3rd position. Return first name, last name and department id. Go to the editor
 SELECT FIRST_NAME, LAST_NAME, DEPARTMENT_ID FROM TBL_EMPLOYEES where SUBSTRING(FIRST_NAME, 3, 1) = "s";
@@ -187,8 +187,10 @@ NOT IN (SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS
 WHERE MANAGER_ID BETWEEN 100 AND 200);
 
 50.	Write a SQL query to find those employees who get second-highest salary. Return all the fields of the employees.
-SELECT * FROM TBL_EMPLOYEES WHERE SALARY < 
-(SELECT MAX(SALARY) FROM TBL_EMPLOYEES) ORDER BY SALARY DESC LIMIT 1;
+-- SELECT * FROM TBL_EMPLOYEES WHERE SALARY < 
+-- (SELECT MAX(SALARY) FROM TBL_EMPLOYEES) ORDER BY SALARY DESC LIMIT 1;
+SELECT * FROM TBL_EMPLOYEES WHERE SALARY = 
+(SELECT SALARY FROM TBL_EMPLOYEES ORDER BY SALARY DESC LIMIT 1 OFFSET 1);
 
 51.	Write a SQL query to find those employees who work in the same department where ‘Clara’ works. Exclude all those records where first name is ‘Clara’. Return first name, last name and hire date.
 SELECT FIRST_NAME, LAST_NAME, HIRE_DATE FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID = 
@@ -204,7 +206,8 @@ SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME FROM TBL_EMPLOYEES WHERE FIRST_NAME LI
 54.	Write a SQL query to find those employees whose department located at 'Toronto'. Return first name, last name, employee ID, job ID.
 SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME, JOB_ID 
 FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID = 
-(SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS WHERE LOCATION_ID = '1800');
+(SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS 
+WHERE LOCATION_ID = (SELECT LOCATION_ID FROM TBL_LOCATIONS WHERE CITY = "Toronto"));
 
 55.	Write a SQL query to find those employees whose salary is lower than any salary of those employees whose job title is ‘MK_MAN’. Return employee ID, first name, last name, job ID.
 SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME, JOB_ID 
@@ -216,11 +219,14 @@ FROM TBL_EMPLOYEES WHERE SALARY < (SELECT SALARY FROM TBL_EMPLOYEES WHERE JOB_ID
 
 57.	Write a SQL query to find those employees whose salary is more than any salary of those employees whose job title is 'PU_MAN'. Exclude job title 'PU_MAN'. Return employee ID, first name, last name, job ID.
 SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME, JOB_ID 
-FROM TBL_EMPLOYEES WHERE SALARY > (SELECT SALARY FROM TBL_EMPLOYEES WHERE JOB_ID = "PU_MAN") AND JOB_ID != "MK_MAN";
+FROM TBL_EMPLOYEES WHERE SALARY > (SELECT SALARY FROM TBL_EMPLOYEES 
+WHERE JOB_ID = "PU_MAN") AND JOB_ID != "PU_MAN";
 
 58.	Write a SQL query to find those employees whose salary is more than average salary of any department. Return employee ID, first name, last name, job ID.
-SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME, JOB_ID 
-FROM TBL_EMPLOYEES WHERE SALARY > (SELECT AVG(SALARY) FROM TBL_EMPLOYEES GROUP BY DEPARTMENT_ID LIMIT 1);
+SELECT EMPLOYEE_ID, FIRST_NAME, LAST_NAME, JOB_ID, SALARY 
+FROM TBL_EMPLOYEES 
+WHERE SALARY > ANY (SELECT AVG(SALARY) FROM TBL_EMPLOYEES 
+GROUP BY DEPARTMENT_ID);
 
 59.	Write a SQL query to find any existence of those employees whose salary exceeds 3700. Return first name, last name and department ID.
 SELECT FIRST_NAME, LAST_NAME, DEPARTMENT_ID 
@@ -228,7 +234,7 @@ FROM TBL_EMPLOYEES WHERE SALARY > 3700;
 
 60.	Write a SQL query to find total salary of those departments where at least one employee works. Return department ID, total salary.
 SELECT DEPARTMENT_ID, SUM(SALARY) AS TOTAL_SALARY
-FROM TBL_EMPLOYEES GROUP BY DEPARTMENT_ID HAVING COUNT(EMPLOYEE_ID) > 1;
+FROM TBL_EMPLOYEES GROUP BY DEPARTMENT_ID HAVING COUNT(EMPLOYEE_ID) >= 1;
 
 61. Write a query to display the employee id, name ( first name and last name ) and the job id column with a modified title SALESMAN for those employees whose job title is ST_MAN and DEVELOPER for whose job title is IT_PROG.
 SELECT EMPLOYEE_ID, getFullName(FIRST_NAME, LAST_NAME) AS FULL_NAME, 
@@ -265,8 +271,11 @@ GROUP BY DEPARTMENT_ID HAVING COUNT(EMPLOYEE_ID) >= 1);
 65.	Write a SQL query to find those employees who work in departments located at 'United Kingdom'. Return first name.
 SELECT FIRST_NAME, DEPARTMENT_ID
 FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID in 
-(SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS WHERE LOCATION_ID 
-IN (SELECT LOCATION_ID FROM TBL_LOCATIONS WHERE COUNTRY_ID LIKE "%UK%"));
+(SELECT DEPARTMENT_ID FROM TBL_DEPARTMENTS 
+WHERE LOCATION_ID 
+IN (SELECT LOCATION_ID FROM TBL_LOCATIONS 
+WHERE COUNTRY_ID = (SELECT COUNTRY_ID FROM TBL_COUNTRIES 
+WHERE COUNTRY_NAME = "United Kingdom")));
 
 66.	Write a SQL query to find those employees who earn more than average salary and who work in any of the 'IT' departments. Return last name.
 SELECT LAST_NAME, DEPARTMENT_ID
@@ -349,7 +358,7 @@ WHERE SALARY < (SELECT MIN(SALARY) FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID = "70"
 83.	Write a SQL query to find those employees who earn less than the average salary, and work at the department where the employee 'Laura' (first name) works. Return first name, last name, salary, and department ID.
 SELECT FIRST_NAME, LAST_NAME, SALARY, DEPARTMENT_ID FROM TBL_EMPLOYEES 
 WHERE SALARY < (SELECT AVG(SALARY) FROM TBL_EMPLOYEES) AND 
-DEPARTMENT_ID = (SELECT DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE FIRST_NAME = "Clara");
+DEPARTMENT_ID = (SELECT DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE FIRST_NAME = "Laura");
 
 84.	Write a SQL query to find those employees whose department is located in the city 'London'. Return first name, last name, salary, and department ID.
 SELECT FIRST_NAME, LAST_NAME, SALARY, DEPARTMENT_ID FROM TBL_EMPLOYEES WHERE DEPARTMENT_ID = 
@@ -379,7 +388,9 @@ GROUP BY MANAGER_ID HAVING COUNT(EMPLOYEE_ID) >= 4);
 
 89.	Write a SQL query to find those employees who worked as a 'Sales Representative' in the past. Return all the fields of jobs.
 SELECT * FROM TBL_EMPLOYEES WHERE EMPLOYEE_ID = 
-(SELECT EMPLOYEE_ID FROM TBL_JOBHISTORY WHERE JOB_ID = "SA_REP");
+(SELECT EMPLOYEE_ID FROM TBL_JOBHISTORY 
+WHERE JOB_ID = (SELECT JOB_ID FROM TBL_JOBS 
+WHERE JOB_TITLE = "Sales Representative")););
 
 90.	Write a SQL query to find those employees who earn second-lowest salary of all the employees. Return all the fields of employees.
 SELECT * FROM TBL_EMPLOYEES
